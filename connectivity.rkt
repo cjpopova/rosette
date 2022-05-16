@@ -1,6 +1,7 @@
 #lang rosette
 
-#| [Problem 1]
+#|
+[Problem 1]
 Let T = (V, P) be a tree with vertices V and edges P.
 
 The edges P are symbolic. In the formula over P, we have the property that:
@@ -23,14 +24,19 @@ More formally:
       (u v) ∈ P
       ∃ k ∈ V . (u k) ∈ P ∧ (k v) ∈ E
                         
+Challenge: The construction of T is out of scope of this problem. We are concerned with 
+the construction of G.
 
-[Solution]
-The construction of T is out of scope of this problem.
-Suppose we are given T as a concrete adjacency matrix. The formula for G is a predicate implementing
-the recursive algorithm above. To ensure termination the fuel, or the length of the path, is bounded
-by the number of vertices in V.
+Solution:
+1 ~ Data structures. Suppose we are given T as a concrete adjacency matrix of 0s and 1s (or trues and
+falses). The same representation will be the output G.
+
+2 ~ Algorithm. The formula for G is a predicate implementing the recursive algorithm above. 
 Notice that for the recursive part of the formula [(k v) ∈ E], we CANNOT reference E. This will
 cause spurious edges. We must invoke this algo recursively. 
+
+3 ~ Termination. To ensure termination the fuel/length of path/number of recusive calls is bounded
+by the number of vertices in V.
 |#
 
 ; (Listof Bool) Natural -> (Listof SymbolicBoolean)
@@ -79,36 +85,44 @@ cause spurious edges. We must invoke this algo recursively.
 
   ; checks that the only solution to (connectivity input) is the expected matrix
   ; (Listof Integer) (Listof Integer) -> Bool
-  (define-simple-check (only-sol? input expected)
+  (define-simple-check (exact-solution? input expected)
     (result-value ; extract the final value
      (with-vc (vc) ; isolate each test case
        (begin
          (define input-tree (int->bool input))
          (define num-vert (sqrt (length input-tree)))
          (define actual (connectivity input-tree num-vert))
-         ; look for a solution which doesn't match the expected
-         (define M (solve (assert (not (equal? actual
-                                               (int->bool expected))))))
-         (cond [(unsat? M)
-                (displayln "ok")] 
-               [else ; print out the bad solution
+         (define expected-bools (int->bool expected))
+         ; solve for any solution
+         (define M (solve (assert #t)))
+         ; solve for a solution which doesn't match the expected
+         (define Mnot (solve (assert (not (equal? actual
+                                                  expected-bools)))))
+         (cond [(and (not (unsat? M))
+                     (equal? (evaluate actual M) expected-bools)
+                     (unsat? Mnot))
+                (displayln "ok")
+                #t] 
+               [else ; print out errors
                 (displayln (format "input ~a" input))
-                (define (Medge i j) (M (list-ref actual (+ (* i num-vert) j))))
-                (for ([i (in-range num-vert)])
-                  (for ([j (in-range num-vert)])
-                    (display (if (Medge i j)
-                                 1 0)))
-                  (display "\n"))])
-         (unsat? M)))))
+                (when (unsat? M) (displayln "no solution found"))
+                (unless (unsat? Mnot)
+                  (define (Medge i j) (Mnot (list-ref actual (+ (* i num-vert) j))))
+                  (for ([i (in-range num-vert)])
+                    (for ([j (in-range num-vert)])
+                      (display (if (Medge i j)
+                                   1 0)))
+                    (display "\n")))
+                #f])))))
     
-  (only-sol?
+  (exact-solution?
    (make-list 16 0)
    (list 1 0 0 0
          0 1 0 0
          0 0 1 0
          0 0 0 1))
 
-  (only-sol?
+  (exact-solution?
    (list 0 1 0 0 ; 1-2-3
          1 0 1 0
          0 1 0 0
@@ -118,7 +132,7 @@ cause spurious edges. We must invoke this algo recursively.
          1 1 1 0
          0 0 0 1))
 
-  (only-sol?
+  (exact-solution?
    (list 0 1 0 0 ; 1-2, 3-4
          1 0 0 0
          0 0 0 1
