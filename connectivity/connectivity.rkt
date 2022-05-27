@@ -119,11 +119,22 @@ by the number of vertices in V.
                   (for ([i (in-range num-vert)])
                     (for ([j (in-range num-vert)])
                       (display (if (Medge i j)
-                                   1 0)))
+                                   1 0))
+                      (display " "))
                     (display "\n")))
                 #f])))))
 
   (exact-solution?
+   (list 0 1 1 0
+         1 0 1 0
+         1 1 0 0
+         0 0 0 0)
+   (list 1 1 1 0 
+         1 1 1 0 
+         1 1 1 0 
+         0 0 0 1 ))
+
+  #|(exact-solution?
    (list 0 0 1 0
          0 0 0 1
          1 0 0 0
@@ -187,6 +198,6 @@ by the number of vertices in V.
            1 1 1 1 0 0 
            1 1 1 1 0 0 
            0 0 0 0 1 1 
-           0 0 0 0 1 1))
+           0 0 0 0 1 1))|#
 
   ) 
